@@ -14,12 +14,23 @@ public class Sword : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag(EnemiesTag))
+        var go = collision.gameObject;
+
+        if (go.CompareTag(EnemiesTag))
         {
-            var body = collision.gameObject.GetComponent<Rigidbody2D>();
+            var dir = (transform.position - playerTransform.position).normalized;
+            var body = go.GetComponent<Rigidbody2D>();
+
             if (body)
             {
-                body.AddForce(playerTransform.right * 5, ForceMode2D.Impulse);
+                body.AddForce(dir * 10, ForceMode2D.Impulse);
+            }
+
+            var enemy = go.GetComponent<Enemy>();
+            if (enemy)
+            {
+                enemy.Flip((dir.x > 0) ? true : false);
+                enemy.TakeDamage(damageAmount);
             }
         }
     }
