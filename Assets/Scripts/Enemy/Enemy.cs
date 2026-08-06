@@ -18,7 +18,7 @@ public class Enemy : MonoBehaviour
         _health -= damage;
         _animator.SetTrigger("Hit");
 
-        gameObject.SetActive(_health <= 0);
+        gameObject.SetActive(_health > 0);
     }
 
     public void Flip(bool state)

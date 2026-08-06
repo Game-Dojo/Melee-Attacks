@@ -4,18 +4,17 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-	public enum PlayerStates
-	{
-		Idle,
-		Walk,
-		Jump,
-		Fall,
-		Attack
-	}
-
 	[Header("Properties")]
 	[SerializeField] private float speed = 8.0f;
 	[SerializeField] private float jumpForce = 2.0f;
+
+	[Header("Game Feel")]
+	[SerializeField] private float fallGravity = 2f;
+	[SerializeField] private float coyoteTimeCount = 0.2f;
+	[SerializeField] private float jumpBufferCount = 0.2f;
+	[SerializeField] private float jumpReleasedForce = 0.5f;
+
+	[Header("Collisions")]
 	[SerializeField] private LayerMask groundMask;
 
 	[Header("UI")]
@@ -29,17 +28,18 @@ public class PlayerController : MonoBehaviour
 
 	#region Private members
 	private Rigidbody2D _rb;
-	private SpriteRenderer _renderer;
 	private Animator _animator;
-	private PlayerStates _currentState = PlayerStates.Idle;
+	private PlayerSTM _stm;
 
 	private float _horizontalMovement;
 
-	private bool _canJump = false;
 	private bool _canAttack = false;
 	private bool _isGrounded = false;
 	private bool _isDead = false;
+	private bool _isJumpReleased = false;
 
+	private float _coyoteCounter = 0;
+	private float _jumpBufferCounter = 0;
 	#endregion
 
 	#region Unity Methods
@@ -47,13 +47,16 @@ public class PlayerController : MonoBehaviour
 	private void Awake()
 	{
 		_rb = GetComponent<Rigidbody2D>();
-		_renderer = GetComponentInChildren<SpriteRenderer>();
 		_animator = GetComponent<Animator>();
+
+		_stm = GetComponent<PlayerSTM>();
 
 		_moveAction.action.performed += OnMove;
 		_moveAction.action.canceled += OnMovementStop;
 
 		_jumpAction.action.performed += OnJump;
+		_jumpAction.action.canceled += OnReleaseJump;
+
 		_attackAction.action.performed += OnAttack;
 		_pauseAction.action.performed += OnPause;
 	}
@@ -64,84 +67,19 @@ public class PlayerController : MonoBehaviour
 
 		CheckGround();
 
-		switch (_currentState)
-		{
-			case PlayerStates.Idle:
-				if (IsMoving())
-					SetState(PlayerStates.Walk);
+		if (_isGrounded)
+			_coyoteCounter = coyoteTimeCount;
+		else
+			_coyoteCounter -= Time.deltaTime;
 
-				if (IsOnGround())
-					SetState(PlayerStates.Jump);
+		_jumpBufferCounter -= Time.deltaTime;
 
-				if (IsFalling())
-					SetState(PlayerStates.Fall);
-
-				if (CanAttack())
-					SetState(PlayerStates.Attack);
-				break;
-
-			case PlayerStates.Walk:
-				if (IsStanding())
-					SetState(PlayerStates.Idle);
-
-				if (IsOnGround())
-					SetState(PlayerStates.Jump);
-
-				if (IsFalling())
-					SetState(PlayerStates.Fall);
-
-				if (CanAttack())
-					SetState(PlayerStates.Attack);
-				break;
-
-			case PlayerStates.Jump:
-				if (IsFalling())
-					SetState(PlayerStates.Fall);
-
-				if (IsMoving())
-					SetState(PlayerStates.Walk);
-				break;
-
-			case PlayerStates.Fall:
-				if (IsStanding())
-					SetState(PlayerStates.Idle);
-
-				if (IsMoving())
-					SetState(PlayerStates.Walk);
-				break;
-
-			case PlayerStates.Attack:
-				if (IsMoving())
-					SetState(PlayerStates.Walk);
-
-				if (IsStanding())
-					SetState(PlayerStates.Idle);
-
-				if (IsFalling())
-					SetState(PlayerStates.Fall);
-				break;
-		}
+		_stm.OnUpdateState();
 	}
 
 	private void FixedUpdate()
 	{
-		switch (_currentState)
-		{
-			case PlayerStates.Idle:
-				_rb.linearVelocityX = 0;
-				break;
-			case PlayerStates.Walk:
-				_rb.linearVelocityX = _horizontalMovement * speed;
-				break;
-			case PlayerStates.Jump:
-				if (_canJump)
-				{
-					_rb.linearVelocityY = 0;
-					_rb.linearVelocityY = jumpForce;
-					_canJump = false;
-				}
-				break;
-		}
+		_stm.OnFixedUpdateState();
 	}
 
 	private void OnDrawGizmos()
@@ -156,7 +94,7 @@ public class PlayerController : MonoBehaviour
 		}
 
 		//Gizmos.color = (_isGrounded) ? Color.yellow : Color.purple;
-		Gizmos.DrawLine(transform.position - new Vector3(0, -0.1f, 0), (transform.position) + (Vector3.down * 0.2f));
+		Gizmos.DrawLine(transform.position - new Vector3(0, -0.1f, 0), (transform.position) + (Vector3.down * 0.15f));
 	}
 
 	private void OnDestroy()
@@ -165,11 +103,13 @@ public class PlayerController : MonoBehaviour
 		_moveAction.action.performed -= OnMove;
 		_moveAction.action.canceled -= OnMovementStop;
 		_jumpAction.action.performed -= OnJump;
+		_jumpAction.action.canceled -= OnReleaseJump;
 		_attackAction.action.performed -= OnAttack;
 	}
 	#endregion
 
 	#region Input Management
+
 	private void OnPause(InputAction.CallbackContext context)
 	{
 		print("Pausa el juego");
@@ -177,22 +117,18 @@ public class PlayerController : MonoBehaviour
 
 	private void OnAttack(InputAction.CallbackContext context)
 	{
-		//if (_animator) _animator.SetTrigger("Attack");
-		_canAttack = true;
+		if (_animator) _animator.SetTrigger("Attack");
 	}
 
 	private void OnJump(InputAction.CallbackContext context)
 	{
-		_canJump = true;
-		//if (_animator) _animator.SetTrigger("Jump");
-		/*if (_isGrounded == true)
-		{
-			_canJump = true;
-			_isJumping = true;
-			if (_animator) _animator.SetTrigger("Jump");
+		_jumpBufferCounter = jumpBufferCount;
+		_isJumpReleased = false;
+	}
 
-			SetState(PlayerStates.Jump);
-		}*/
+	private void OnReleaseJump(InputAction.CallbackContext context)
+	{
+		_isJumpReleased = true;
 	}
 
 	private void OnMove(InputAction.CallbackContext context)
@@ -201,38 +137,65 @@ public class PlayerController : MonoBehaviour
 
 		var flip = (_horizontalMovement > 0) ? 1 : -1;
 		transform.localScale = new Vector3(flip, 1, 1);
+		stateText.rectTransform.localScale = new Vector2(flip, 1);
 	}
 
 	private void OnMovementStop(InputAction.CallbackContext context)
 	{
 		_horizontalMovement = 0;
-		//_isRunning = false;
-
-		//SetState(PlayerStates.Idle);
 	}
+
 	#endregion
 
-	#region Finite State Machine
-	private void SetState(PlayerStates newState)
+	#region Conditions
+	public bool IsStanding() => _horizontalMovement == 0 && _isGrounded;
+	public bool IsMoving() => _horizontalMovement != 0;
+	public bool IsGrounded() => _isGrounded;
+	public bool IsFalling() => !_isGrounded && _rb.linearVelocityY < 0;
+	public bool CanJump() => _jumpBufferCounter > 0f && _coyoteCounter > 0f;
+	public bool CanAttack() => _canAttack;
+	public bool IsDead() => _isDead;
+
+	public bool IsJumpReleased() => _isJumpReleased;
+	#endregion
+
+	#region Actions
+	public void Stop() => _rb.linearVelocityX = 0;
+	public void Jump()
 	{
-		if (_currentState != newState)
-		{
-			_currentState = newState;
-			stateText.text = newState.ToString();
-		}
+		_rb.linearVelocityY = jumpForce;
+
+		_jumpBufferCounter = 0;
+		_coyoteCounter = 0;
+		_isJumpReleased = false;
 	}
 
-	private bool IsStanding() => _horizontalMovement == 0 && _isGrounded;
-	private bool IsMoving() => _horizontalMovement != 0;
-	private bool IsOnGround() => _canJump && _isGrounded;
-	private bool IsFalling() => !_isGrounded && _rb.linearVelocityY < 0;
-	private bool CanAttack() => _canAttack;
+	public void VariableJump()
+	{
+		if (_rb.linearVelocityY > 0)
+		{
+			_rb.linearVelocityY *= jumpReleasedForce;
+		}
+		_isJumpReleased = false;
+	}
 
+	public void Move() => _rb.linearVelocityX = _horizontalMovement * speed;
+	public void SetFallGravity() => _rb.gravityScale *= fallGravity;
+	public void SetGroundGravity() => _rb.gravityScale = 1;
 	#endregion
 
 	private void CheckGround()
 	{
 		var origin = transform.position - new Vector3(0, -0.1f, 0);
-		_isGrounded = Physics2D.Raycast(origin, Vector3.down, 0.2f, groundMask);
+		_isGrounded = Physics2D.Raycast(origin, Vector3.down, 0.15f, groundMask);
 	}
+
+	public void SetStateText(string newState)
+	{
+		stateText.text = newState;
+	}
+
+	public Rigidbody2D GetBody() => _rb;
+	public Animator GetAnimator() => _animator;
+
 }

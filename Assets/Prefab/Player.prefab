@@ -5475,6 +5475,7 @@ GameObject:
   - component: {fileID: 8681714698126096597}
   - component: {fileID: 2417326891672974734}
   - component: {fileID: 5148087499687816666}
+  - component: {fileID: 46161358074381927}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -5511,7 +5512,7 @@ CapsuleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 480f899f28461d5499b144a6ae9f7252, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -5601,6 +5602,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   speed: 8
   jumpForce: 2
+  coyoteTimeCount: 0.2
+  jumpBufferCount: 0.2
+  jumpReleasedForce: 0.5
   groundMask:
     serializedVersion: 2
     m_Bits: 64
@@ -5609,6 +5613,19 @@ MonoBehaviour:
   _jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _attackAction: {fileID: 1120369429361536294, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _pauseAction: {fileID: -8212732989034009692, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+--- !u!114 &46161358074381927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7022566224297137017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcd472be88bbbc942a1de95db54b12c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSTM
+  _currentState: 0
 --- !u!1 &7570263708885984445
 GameObject:
   m_ObjectHideFlags: 0
