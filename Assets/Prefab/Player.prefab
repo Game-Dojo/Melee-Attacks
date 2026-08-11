@@ -5536,8 +5536,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.63}
-  m_Size: {x: 0.84, y: 1.26}
+  m_Offset: {x: -0.0022425652, y: 0.6243044}
+  m_Size: {x: 0.7540312, y: 1.205488}
   m_Direction: 0
 --- !u!50 &8681714698126096597
 Rigidbody2D:
@@ -5602,6 +5602,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   speed: 8
   jumpForce: 2
+  raycastLength: 0.3
+  slideMovement:
+    <maxIterations>k__BackingField: 3
+    <surfaceSlideAngle>k__BackingField: 90
+    <gravitySlipAngle>k__BackingField: 90
+    <surfaceUp>k__BackingField: {x: 0, y: 1}
+    <surfaceAnchor>k__BackingField: {x: 0, y: -1}
+    <gravity>k__BackingField: {x: 0, y: -9.81}
+    <startPosition>k__BackingField: {x: 0, y: 0}
+    <selectedCollider>k__BackingField: {fileID: 0}
+    <layerMask>k__BackingField:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    <useLayerMask>k__BackingField: 0
+    <useStartPosition>k__BackingField: 0
+    <useNoMove>k__BackingField: 0
+    <useSimulationMove>k__BackingField: 0
+    <useAttachedTriggers>k__BackingField: 0
+  slideResults:
+    <remainingVelocity>k__BackingField: {x: 0, y: 0}
+    <position>k__BackingField: {x: 0, y: 0}
+    <iterationsUsed>k__BackingField: 0
+  fallGravity: 2
   coyoteTimeCount: 0.2
   jumpBufferCount: 0.2
   jumpReleasedForce: 0.5
@@ -5613,6 +5636,7 @@ MonoBehaviour:
   _jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _attackAction: {fileID: 1120369429361536294, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _pauseAction: {fileID: -8212732989034009692, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  _interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
 --- !u!114 &46161358074381927
 MonoBehaviour:
   m_ObjectHideFlags: 0

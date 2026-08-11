@@ -7,6 +7,11 @@ public class PlayerController : MonoBehaviour
 	[Header("Properties")]
 	[SerializeField] private float speed = 8.0f;
 	[SerializeField] private float jumpForce = 2.0f;
+	[SerializeField] private float raycastLength = 0.3f;
+	[SerializeField] private Rigidbody2D.SlideMovement slideMovement = new Rigidbody2D.SlideMovement();
+	[SerializeField] private Rigidbody2D.SlideResults slideResults;
+
+	[SerializeField] private EnemyDialogs enemyDialogs;
 
 	[Header("Game Feel")]
 	[SerializeField] private float fallGravity = 2f;
@@ -25,6 +30,7 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private InputActionReference _jumpAction;
 	[SerializeField] private InputActionReference _attackAction;
 	[SerializeField] private InputActionReference _pauseAction;
+	[SerializeField] private InputActionReference _interactAction;
 
 	#region Private members
 	private Rigidbody2D _rb;
@@ -32,6 +38,7 @@ public class PlayerController : MonoBehaviour
 	private PlayerSTM _stm;
 
 	private float _horizontalMovement;
+	private Vector2 _velocity = Vector2.zero;
 
 	private bool _canAttack = false;
 	private bool _isGrounded = false;
@@ -40,6 +47,9 @@ public class PlayerController : MonoBehaviour
 
 	private float _coyoteCounter = 0;
 	private float _jumpBufferCounter = 0;
+
+	private bool _isInsideArea = false;
+
 	#endregion
 
 	#region Unity Methods
@@ -59,6 +69,7 @@ public class PlayerController : MonoBehaviour
 
 		_attackAction.action.performed += OnAttack;
 		_pauseAction.action.performed += OnPause;
+		_interactAction.action.performed += OnInteract;
 	}
 
 	private void Update()
@@ -94,7 +105,8 @@ public class PlayerController : MonoBehaviour
 		}
 
 		//Gizmos.color = (_isGrounded) ? Color.yellow : Color.purple;
-		Gizmos.DrawLine(transform.position - new Vector3(0, -0.1f, 0), (transform.position) + (Vector3.down * 0.15f));
+		//Gizmos.DrawLine(transform.position - new Vector3(0, -0.1f, 0), (transform.position) + (Vector3.down * raycastLength));
+		Gizmos.DrawWireSphere(transform.position - new Vector3(0, raycastLength, 0), raycastLength);
 	}
 
 	private void OnDestroy()
@@ -105,6 +117,7 @@ public class PlayerController : MonoBehaviour
 		_jumpAction.action.performed -= OnJump;
 		_jumpAction.action.canceled -= OnReleaseJump;
 		_attackAction.action.performed -= OnAttack;
+		_interactAction.action.performed -= OnInteract;
 	}
 	#endregion
 
@@ -138,6 +151,8 @@ public class PlayerController : MonoBehaviour
 		var flip = (_horizontalMovement > 0) ? 1 : -1;
 		transform.localScale = new Vector3(flip, 1, 1);
 		stateText.rectTransform.localScale = new Vector2(flip, 1);
+
+		_velocity.x = _horizontalMovement * speed;
 	}
 
 	private void OnMovementStop(InputAction.CallbackContext context)
@@ -145,6 +160,14 @@ public class PlayerController : MonoBehaviour
 		_horizontalMovement = 0;
 	}
 
+	private void OnInteract(InputAction.CallbackContext context)
+	{
+		if (_isInsideArea)
+		{
+			print("INTERACT");
+			enemyDialogs.NextDialog();
+		}
+	}
 	#endregion
 
 	#region Conditions
@@ -160,10 +183,16 @@ public class PlayerController : MonoBehaviour
 	#endregion
 
 	#region Actions
-	public void Stop() => _rb.linearVelocityX = 0;
+	public void Stop()
+	{
+		_velocity.x = 0;
+		_rb.linearVelocityX = _velocity.x;
+	}
+
 	public void Jump()
 	{
-		_rb.linearVelocityY = jumpForce;
+		_velocity.y = jumpForce;
+		_rb.linearVelocityY = _velocity.y;
 
 		_jumpBufferCounter = 0;
 		_coyoteCounter = 0;
@@ -179,20 +208,36 @@ public class PlayerController : MonoBehaviour
 		_isJumpReleased = false;
 	}
 
-	public void Move() => _rb.linearVelocityX = _horizontalMovement * speed;
+	public void Move()
+	{
+		_rb.linearVelocityX = _velocity.x;
+	}
+
 	public void SetFallGravity() => _rb.gravityScale *= fallGravity;
 	public void SetGroundGravity() => _rb.gravityScale = 1;
 	#endregion
 
 	private void CheckGround()
 	{
-		var origin = transform.position - new Vector3(0, -0.1f, 0);
-		_isGrounded = Physics2D.Raycast(origin, Vector3.down, 0.15f, groundMask);
+		var origin = transform.position - new Vector3(0, raycastLength - 0.1f, 0);
+		//_isGrounded = Physics2D.Raycast(origin, Vector3.down, raycastLength, groundMask);
+
+		_isGrounded = Physics2D.OverlapCircle(origin, raycastLength, groundMask);
 	}
 
 	public void SetStateText(string newState)
 	{
 		stateText.text = newState;
+	}
+
+	public void SetInArea()
+	{
+		_isInsideArea = true;
+	}
+
+	public void SetOutArea()
+	{
+		_isInsideArea = false;
 	}
 
 	public Rigidbody2D GetBody() => _rb;
